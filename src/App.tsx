@@ -245,7 +245,7 @@ export default function App() {
       }
 
       // Winning logic
-      const startDate = new Date("2026-04-01T00:00:00");
+      const startDate = new Date("2026-03-01T00:00:00"); // Alterado para teste (Hoje é 08/03)
       const now = new Date();
       let isWinnerResult = 0;
 
@@ -265,6 +265,7 @@ export default function App() {
         const remainingPrizes = totalAvailablePrizes - prizesUsed;
 
         if (remainingPrizes > 0) {
+          // 5% de chance de ganhar conforme solicitado
           isWinnerResult = Math.random() < 0.05 ? 1 : 0;
         }
       }
