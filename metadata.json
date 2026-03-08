@@ -1,0 +1,7 @@
+{
+  "name": "Operação Hexa - Cupom Premiado",
+  "description": "Sistema de sorteio de cupons premiados com tema da Copa do Mundo e Operação Hexa.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

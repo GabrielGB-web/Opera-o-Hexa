@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-green: #009739;
+  --color-brand-yellow: #FFDF00;
+  --color-brand-white: #FFFFFF;
+  --color-brand-dark-green: #006400;
+}
+
+body {
+  background-color: #FFDF00; /* Vibrant Yellow */
+  background-image: 
+    radial-gradient(circle at 2px 2px, rgba(0, 151, 57, 0.08) 1px, transparent 0),
+    linear-gradient(rgba(255, 223, 0, 0.9), rgba(255, 223, 0, 0.9)),
+    url("https://www.transparenttextures.com/patterns/cubes.png");
+  background-size: 32px 32px, 100% 100%, auto;
+  color: #1a2e05;
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("https://www.transparenttextures.com/patterns/grass.png");
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.golden-gradient {
+  background: linear-gradient(45deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C);
+  background-size: 400% 400%;
+  animation: gradient 5s ease infinite;
+}
+
+.hexa-gradient {
+  background: linear-gradient(135deg, #009739 0%, #FFDF00 100%);
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
