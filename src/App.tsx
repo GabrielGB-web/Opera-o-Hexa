@@ -56,10 +56,11 @@ interface FormData {
   store: string;
   couponNumber: string;
   receiptImage: string | null;
+  receiptFile: File | null;
 }
 
 // Placeholder for the logo provided by user
-const LOGO_URL = "https://i.ibb.co/Y7XRBpv6/LOGO-GTA-1.png"; // Note: User should replace this with their actual uploaded logo path if needed
+const LOGO_URL = "https://i.ibb.co/LdWr9jx3/LOGO-GTA.png";
 
 export default function App() {
   const [step, setStep] = useState<Step>('form');
@@ -70,7 +71,8 @@ export default function App() {
     phone: '',
     store: '',
     couponNumber: '',
-    receiptImage: null
+    receiptImage: null,
+    receiptFile: null
   });
   const [isWinner, setIsWinner] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -195,6 +197,7 @@ export default function App() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setFormData(prev => ({ ...prev, receiptFile: file }));
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData(prev => ({ ...prev, receiptImage: reader.result as string }));
@@ -270,6 +273,19 @@ export default function App() {
         }
       }
 
+      // Upload receipt to Supabase Storage
+      let receiptPath = "no_image";
+      if (formData.receiptFile) {
+        const fileExt = formData.receiptFile.name.split('.').pop();
+        const fileName = `${Date.now()}_${trimmedCoupon}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('receipts')
+          .upload(fileName, formData.receiptFile);
+
+        if (uploadError) throw uploadError;
+        receiptPath = uploadData.path;
+      }
+
       // Insert registration
       const { error: insertError } = await supabase
         .from('registrations')
@@ -280,7 +296,7 @@ export default function App() {
           phone: formData.phone.trim(),
           store: trimmedStore,
           coupon_number: trimmedCoupon,
-          receipt_path: "placeholder_path", // In a real app, upload to Supabase Storage first
+          receipt_path: receiptPath,
           is_winner: isWinnerResult
         }]);
 
@@ -309,7 +325,8 @@ export default function App() {
       phone: '',
       store: '',
       couponNumber: '',
-      receiptImage: null
+      receiptImage: null,
+      receiptFile: null
     });
     setIsWinner(false);
     setError(null);
