@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { supabase } from './lib/supabaseClient';
 import { 
   Ticket, 
   Store, 
@@ -99,13 +100,23 @@ export default function App() {
   React.useEffect(() => {
     fetchStores();
     fetchWinners();
+    
+    // Auto-open admin if URL param is present
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('admin') === 'true') {
+      setShowAdmin(true);
+    }
   }, []);
 
   const fetchStores = async () => {
     try {
-      const res = await fetch('/api/stores');
-      const data = await res.json();
-      setStores(data);
+      const { data, error } = await supabase
+        .from('stores')
+        .select('*')
+        .order('fantasia', { ascending: true });
+      
+      if (error) throw error;
+      setStores(data || []);
     } catch (err) {
       console.error("Error fetching stores:", err);
     }
@@ -113,9 +124,14 @@ export default function App() {
 
   const fetchWinners = async () => {
     try {
-      const res = await fetch('/api/winners');
-      const data = await res.json();
-      setWinners(data);
+      const { data, error } = await supabase
+        .from('registrations')
+        .select('name, store, cpf')
+        .eq('is_winner', 1)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setWinners(data || []);
     } catch (err) {
       console.error("Error fetching winners:", err);
     }
@@ -130,19 +146,16 @@ export default function App() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(adminCredentials)
-      });
-      if (res.ok) {
+      const adminUser = import.meta.env.VITE_ADMIN_USER || "admin";
+      const adminPass = import.meta.env.VITE_ADMIN_PASS || "hexa2026";
+
+      if (adminCredentials.username === adminUser && adminCredentials.password === adminPass) {
         setIsAdminLoggedIn(true);
       } else {
-        const data = await res.json();
-        alert(data.error || "Login falhou.");
+        alert("Usuário ou senha inválidos. Verifique as variáveis de ambiente VITE_ADMIN_USER e VITE_ADMIN_PASS.");
       }
     } catch (err) {
-      alert("Erro ao conectar com o servidor.");
+      alert("Erro ao realizar login.");
     } finally {
       setIsLoading(false);
     }
@@ -152,21 +165,23 @@ export default function App() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await fetch('/api/admin/stores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(adminStore)
-      });
-      if (res.ok) {
-        setAdminStore({ cnpj: '', razaoSocial: '', fantasia: '', endereco: '', city: '' });
-        fetchStores();
-        alert("Loja cadastrada com sucesso!");
-      } else {
-        const data = await res.json();
-        alert(data.error || "Erro ao cadastrar loja.");
-      }
-    } catch (err) {
-      alert("Erro ao conectar com o servidor.");
+      const { error } = await supabase
+        .from('stores')
+        .insert([{
+          cnpj: adminStore.cnpj,
+          razao_social: adminStore.razaoSocial,
+          fantasia: adminStore.fantasia,
+          endereco: adminStore.endereco,
+          city: adminStore.city
+        }]);
+
+      if (error) throw error;
+
+      setAdminStore({ cnpj: '', razaoSocial: '', fantasia: '', endereco: '', city: '' });
+      fetchStores();
+      alert("Loja cadastrada com sucesso!");
+    } catch (err: any) {
+      alert(err.message || "Erro ao cadastrar loja.");
     } finally {
       setIsLoading(false);
     }
@@ -199,29 +214,76 @@ export default function App() {
     setError(null);
 
     try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+      // Check if coupon number already used in the same store
+      const { data: existingCoupon, error: couponError } = await supabase
+        .from('registrations')
+        .select('*')
+        .eq('store', formData.store)
+        .eq('coupon_number', formData.couponNumber)
+        .maybeSingle();
 
-      let data;
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.indexOf("application/json") !== -1) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        throw new Error(text || "Resposta inesperada do servidor.");
+      if (couponError) throw couponError;
+      if (existingCoupon) {
+        throw new Error("Este cupom já foi cadastrado para esta loja!");
       }
 
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao processar cadastro.");
+      // Check if user already won
+      const { data: winner, error: winnerError } = await supabase
+        .from('registrations')
+        .select('*')
+        .eq('cpf', formData.cpf)
+        .eq('is_winner', 1)
+        .maybeSingle();
+
+      if (winnerError) throw winnerError;
+      if (winner) {
+        throw new Error("Você já foi premiado!");
       }
 
-      setIsWinner(data.isWinner);
+      // Winning logic
+      const startDate = new Date("2026-04-01T00:00:00");
+      const now = new Date();
+      let isWinnerResult = 0;
+
+      if (now >= startDate) {
+        const diffTime = Math.abs(now.getTime() - startDate.getTime());
+        const elapsedWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+        const totalAvailablePrizes = elapsedWeeks + 1;
+
+        const { count, error: countError } = await supabase
+          .from('registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('store', formData.store)
+          .eq('is_winner', 1);
+
+        if (countError) throw countError;
+        const prizesUsed = count || 0;
+        const remainingPrizes = totalAvailablePrizes - prizesUsed;
+
+        if (remainingPrizes > 0) {
+          isWinnerResult = Math.random() < 0.05 ? 1 : 0;
+        }
+      }
+
+      // Insert registration
+      const { error: insertError } = await supabase
+        .from('registrations')
+        .insert([{
+          name: formData.name,
+          email: formData.email,
+          cpf: formData.cpf,
+          phone: formData.phone,
+          store: formData.store,
+          coupon_number: formData.couponNumber,
+          receipt_path: "placeholder_path", // In a real app, upload to Supabase Storage first
+          is_winner: isWinnerResult
+        }]);
+
+      if (insertError) throw insertError;
+
+      setIsWinner(isWinnerResult === 1);
       setStep('animating');
       
-      // Artificial delay for the "searching" animation
       setTimeout(() => {
         setStep('result');
       }, 3000);
@@ -635,9 +697,9 @@ export default function App() {
         <p className="mt-1">Promoção autorizada. Rumo ao Hexa com você!</p>
         <button 
           onClick={() => setShowAdmin(true)}
-          className="mt-4 flex items-center gap-1 text-[8px] opacity-40 hover:opacity-100 transition-opacity"
+          className="mt-4 flex items-center gap-1 text-[10px] opacity-60 hover:opacity-100 transition-opacity bg-brand-green/10 px-2 py-1 rounded"
         >
-          <Settings size={10} /> ÁREA ADMIN
+          <Settings size={12} /> ÁREA ADMIN
         </button>
       </footer>
 
