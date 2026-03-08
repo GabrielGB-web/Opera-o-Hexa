@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS registrations (
     coupon_number TEXT NOT NULL,
     receipt_path TEXT,
     is_winner SMALLINT DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(store, coupon_number)
 );
 
 -- Indices for performance

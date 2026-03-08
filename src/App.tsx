@@ -214,12 +214,16 @@ export default function App() {
     setError(null);
 
     try {
+      const trimmedStore = formData.store.trim();
+      const trimmedCoupon = formData.couponNumber.trim();
+      const trimmedCpf = formData.cpf.trim();
+
       // Check if coupon number already used in the same store
       const { data: existingCoupon, error: couponError } = await supabase
         .from('registrations')
         .select('*')
-        .eq('store', formData.store)
-        .eq('coupon_number', formData.couponNumber)
+        .eq('store', trimmedStore)
+        .eq('coupon_number', trimmedCoupon)
         .maybeSingle();
 
       if (couponError) throw couponError;
@@ -231,7 +235,7 @@ export default function App() {
       const { data: winner, error: winnerError } = await supabase
         .from('registrations')
         .select('*')
-        .eq('cpf', formData.cpf)
+        .eq('cpf', trimmedCpf)
         .eq('is_winner', 1)
         .maybeSingle();
 
@@ -253,7 +257,7 @@ export default function App() {
         const { count, error: countError } = await supabase
           .from('registrations')
           .select('*', { count: 'exact', head: true })
-          .eq('store', formData.store)
+          .eq('store', trimmedStore)
           .eq('is_winner', 1);
 
         if (countError) throw countError;
@@ -269,12 +273,12 @@ export default function App() {
       const { error: insertError } = await supabase
         .from('registrations')
         .insert([{
-          name: formData.name,
-          email: formData.email,
-          cpf: formData.cpf,
-          phone: formData.phone,
-          store: formData.store,
-          coupon_number: formData.couponNumber,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          cpf: trimmedCpf,
+          phone: formData.phone.trim(),
+          store: trimmedStore,
+          coupon_number: trimmedCoupon,
           receipt_path: "placeholder_path", // In a real app, upload to Supabase Storage first
           is_winner: isWinnerResult
         }]);
