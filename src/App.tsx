@@ -56,7 +56,7 @@ interface FormData {
   store: string;
   couponNumber: string;
   receiptImage: string | null;
-  receiptFile: File | null;
+  receiptBlob: Blob | null;
 }
 
 // Placeholder for the logo provided by user
@@ -72,7 +72,7 @@ export default function App() {
     store: '',
     couponNumber: '',
     receiptImage: null,
-    receiptFile: null
+    receiptBlob: null
   });
   const [isWinner, setIsWinner] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -194,15 +194,83 @@ export default function App() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<{ blob: Blob; dataUrl: string }> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Max dimensions
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Canvas context failed'));
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Get low quality dataURL for preview
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+          
+          // Get blob for upload
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve({ blob, dataUrl });
+              } else {
+                reject(new Error('Canvas to Blob failed'));
+              }
+            },
+            'image/jpeg',
+            0.7
+          );
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData(prev => ({ ...prev, receiptFile: file }));
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, receiptImage: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+      setIsLoading(true);
+      try {
+        const { blob, dataUrl } = await compressImage(file);
+        setFormData(prev => ({ 
+          ...prev, 
+          receiptBlob: blob,
+          receiptImage: dataUrl 
+        }));
+      } catch (err) {
+        console.error("Compression error:", err);
+        setError("Erro ao processar imagem. Tente novamente.");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -275,12 +343,13 @@ export default function App() {
 
       // Upload receipt to Supabase Storage
       let receiptPath = "no_image";
-      if (formData.receiptFile) {
-        const fileExt = formData.receiptFile.name.split('.').pop();
-        const fileName = `${Date.now()}_${trimmedCoupon}.${fileExt}`;
+      if (formData.receiptBlob) {
+        const fileName = `${Date.now()}_${trimmedCoupon}.jpg`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('receipts')
-          .upload(fileName, formData.receiptFile);
+          .upload(fileName, formData.receiptBlob, {
+            contentType: 'image/jpeg'
+          });
 
         if (uploadError) throw uploadError;
         receiptPath = uploadData.path;
@@ -326,7 +395,7 @@ export default function App() {
       store: '',
       couponNumber: '',
       receiptImage: null,
-      receiptFile: null
+      receiptBlob: null
     });
     setIsWinner(false);
     setError(null);
