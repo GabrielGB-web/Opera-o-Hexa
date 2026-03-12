@@ -191,6 +191,18 @@ export default function App() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // Numeric-only restrictions
+    if (name === 'cpf' || name === 'couponNumber') {
+      const numericValue = value.replace(/\D/g, '');
+      if (name === 'cpf') {
+        setFormData(prev => ({ ...prev, [name]: numericValue.slice(0, 11) }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: numericValue }));
+      }
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -511,10 +523,12 @@ export default function App() {
                       required
                       type="text"
                       name="cpf"
+                      inputMode="numeric"
+                      maxLength={11}
                       value={formData.cpf}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-brand-green focus:ring-4 focus:ring-brand-green/10 outline-none transition-all font-medium"
-                      placeholder="000.000.000-00"
+                      placeholder="00000000000"
                     />
                   </div>
                 </div>
@@ -560,12 +574,13 @@ export default function App() {
                     required
                     type="text"
                     name="couponNumber"
+                    inputMode="numeric"
                     value={formData.couponNumber}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-brand-green focus:ring-4 focus:ring-brand-green/10 outline-none transition-all font-medium"
                     placeholder="Ex: 123456"
                   />
-                  <p className="text-[9px] text-gray-400 font-bold uppercase">Cada cupom é uma chance única por loja.</p>
+                    <p className="text-[9px] text-gray-400 font-bold uppercase">Cada cupom é uma chance única por loja.</p>
                 </div>
 
                 <div className="space-y-1">
