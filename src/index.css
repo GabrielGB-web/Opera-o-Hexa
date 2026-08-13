@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+@theme {
+  --color-kids-sky: #4FC3F7;
+  --color-kids-pink: #FF80AB;
+  --color-kids-yellow: #FFD54F;
+  --color-kids-green: #81C784;
+  --color-kids-orange: #FFB74D;
+  --color-kids-purple: #CE93D8;
+  --color-kids-cream: #FFFDE7;
+  --color-kids-dark: #37474F;
+}
+
+body {
+  background: linear-gradient(180deg, #E3F2FD 0%, #B3E5FC 30%, #E1F5FE 60%, #FFF9C4 100%);
+  background-attachment: fixed;
+  color: #37474F;
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Cloud shapes */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  z-index: 0;
+  pointer-events: none;
+}
+
+body::before {
+  width: 300px;
+  height: 120px;
+  top: 60px;
+  left: -50px;
+  box-shadow:
+    60px -20px 0 10px rgba(255, 255, 255, 0.5),
+    120px -10px 0 20px rgba(255, 255, 255, 0.4),
+    180px -15px 0 5px rgba(255, 255, 255, 0.5);
+  animation: floatCloud1 25s ease-in-out infinite;
+}
+
+body::after {
+  width: 250px;
+  height: 100px;
+  top: 150px;
+  right: -80px;
+  box-shadow:
+    -50px -15px 0 15px rgba(255, 255, 255, 0.5),
+    -110px -10px 0 10px rgba(255, 255, 255, 0.4);
+  animation: floatCloud2 30s ease-in-out infinite;
+}
+
+@keyframes floatCloud1 {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(80px); }
+}
+
+@keyframes floatCloud2 {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-60px); }
+}
+
+/* Headings use Fredoka */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Fredoka', sans-serif;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #E3F2FD;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4FC3F7;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #29B6F6;
+}
+
+/* Rainbow border animation for the main card */
+@keyframes rainbowBorder {
+  0% { border-color: #4FC3F7; }
+  16% { border-color: #81C784; }
+  33% { border-color: #FFD54F; }
+  50% { border-color: #FFB74D; }
+  66% { border-color: #FF80AB; }
+  83% { border-color: #CE93D8; }
+  100% { border-color: #4FC3F7; }
+}
+
+.rainbow-border {
+  animation: rainbowBorder 6s linear infinite;
+}
+
+/* Sparkle animation */
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+/* Confetti fall animation */
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(400px) rotate(720deg) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* Bounce in animation */
+@keyframes bounceIn {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.15); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.bounce-in {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Float animation for decorative elements */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-10px) rotate(5deg); }
+  75% { transform: translateY(5px) rotate(-3deg); }
+}
+
+/* Pulse glow for buttons */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 4px 15px rgba(255, 183, 77, 0.3); }
+  50% { box-shadow: 0 4px 25px rgba(255, 183, 77, 0.6); }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
