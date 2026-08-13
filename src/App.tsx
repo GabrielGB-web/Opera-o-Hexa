@@ -70,7 +70,7 @@ interface FormData {
   receiptBlob: Blob | null;
 }
 
-const LOGO_URL = "https://i.ibb.co/NnLLB86D/LOGO-GTA.png";
+const LOGO_URL = "https://i.ibb.co/fz7xpnpX/099bebc1-d818-4d02-9c7d-4d7a3592c3cc.png";
 
 export default function App() {
   const [step, setStep] = useState<Step>('form');
